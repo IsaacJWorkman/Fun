@@ -25,6 +25,17 @@
   --ring-7: #1d1408;
   --ring-8: #140d05;
   --ring-9: #0b0703;
+  --bands:
+    var(--ring-1) 0 6vmax,
+    var(--ring-2) 6vmax 13vmax,
+    var(--ring-3) 13vmax 21vmax,
+    var(--ring-4) 21vmax 30vmax,
+    var(--ring-5) 30vmax 40vmax,
+    var(--ring-6) 40vmax 51vmax,
+    var(--ring-7) 51vmax 63vmax,
+    var(--ring-8) 63vmax 76vmax,
+    var(--ring-9) 76vmax 90vmax,
+    #000 90vmax;
 
   --px: 2px;                  /* one "pixel" of shadow/extrusion step        */
   --steps: 13;                /* how many shadow angles a line snaps through */
@@ -52,16 +63,7 @@ body {
   z-index: 0;
   background: radial-gradient(
     circle at calc(100% - var(--bulb-x) - var(--bulb-w) / 2) 50%,
-    var(--ring-1) 0 6vmax,
-    var(--ring-2) 6vmax 13vmax,
-    var(--ring-3) 13vmax 21vmax,
-    var(--ring-4) 21vmax 30vmax,
-    var(--ring-5) 30vmax 40vmax,
-    var(--ring-6) 40vmax 51vmax,
-    var(--ring-7) 51vmax 63vmax,
-    var(--ring-8) 63vmax 76vmax,
-    var(--ring-9) 76vmax 90vmax,
-    #000 90vmax
+    var(--bands)
   );
   animation: flicker 7s infinite;
 }
@@ -112,7 +114,8 @@ main {
   letter-spacing: .08em;            /* room for each letter's shadow */
 }
 
-.line { display: block; }
+/* box hugs the text (pushed right), so JS can measure where the words really are */
+.line { display: block; width: fit-content; margin-left: auto; }
 
 .hint {
   font-size: 1.6rem;
@@ -144,27 +147,36 @@ h1 {
 }
 
 .line {
-  /* derived values (recomputed only when --t steps) */
+  /* shadow direction (unit vector pointing away from the bulb) + brightness.
+     CSS-only mode: bulb is always to the right, so --dx is -1 and --dy/--i
+     come from --t. JS mode: lamp.js overwrites all three inline. */
+  --dx: -1;
   --dy: calc((.5 - var(--t)) * 2);                         /* +1 below bulb → -1 above */
   --i:  calc(1 - 2 * max(var(--t) - .5, .5 - var(--t)));   /* 0 → 1 (at bulb) → 0     */
 
   /* 3 tones: black face, bronze 3D edge, lit background.
-     Every vertical offset is rounded to a whole pixel so edges stay crisp.
+     Every offset is rounded to a whole pixel so edges stay crisp.
      1   1px warm rim on the bulb-facing edge (outlines the letter)
      2-4 graded bronze extrusion going away from the bulb (fades with --i)
      5-6 short hard cast shadow */
   text-shadow:
-    1px round(nearest, calc(var(--dy) * -1px), 1px) 0
+    round(nearest, calc(var(--dx) * -1px), 1px)
+    round(nearest, calc(var(--dy) * -1px), 1px) 0
       rgb(255 214 130 / calc(var(--i) * .95)),
-    calc(var(--px) * -1) round(nearest, calc(var(--dy) * var(--px)), 1px) 0
+    round(nearest, calc(var(--dx) * var(--px)), 1px)
+    round(nearest, calc(var(--dy) * var(--px)), 1px) 0
       rgb(calc(70 * var(--i)) calc(48 * var(--i)) calc(22 * var(--i))),
-    calc(var(--px) * -2) round(nearest, calc(var(--dy) * var(--px) * 2), 1px) 0
+    round(nearest, calc(var(--dx) * var(--px) * 2), 1px)
+    round(nearest, calc(var(--dy) * var(--px) * 2), 1px) 0
       rgb(calc(52 * var(--i)) calc(36 * var(--i)) calc(16 * var(--i))),
-    calc(var(--px) * -3) round(nearest, calc(var(--dy) * var(--px) * 3), 1px) 0
+    round(nearest, calc(var(--dx) * var(--px) * 3), 1px)
+    round(nearest, calc(var(--dy) * var(--px) * 3), 1px) 0
       rgb(calc(38 * var(--i)) calc(26 * var(--i)) calc(12 * var(--i))),
-    calc(var(--px) * -5) round(nearest, calc(var(--dy) * var(--px) * 5), 1px) 0
+    round(nearest, calc(var(--dx) * var(--px) * 5), 1px)
+    round(nearest, calc(var(--dy) * var(--px) * 5), 1px) 0
       rgb(0 0 0 / .45),
-    calc(var(--px) * -7) round(nearest, calc(var(--dy) * var(--px) * 7), 1px) 0
+    round(nearest, calc(var(--dx) * var(--px) * 7), 1px)
+    round(nearest, calc(var(--dy) * var(--px) * 7), 1px) 0
       rgb(0 0 0 / .3);
 }
 
@@ -181,6 +193,41 @@ h1 {
     animation-timeline: view();
     animation-range: cover 0% cover 100%;
   }
+}
+
+
+/* ===== 6b. JS mode (lamp.js adds .js to <html>) =====
+   Bulb, cord and light pool are positioned only by transforms set in JS. */
+.js .line { animation: none; }
+
+.js .bulb {
+  left: 0;
+  top: 0;
+  right: auto;
+  cursor: grab;
+  touch-action: none;           /* finger drags the bulb instead of scrolling */
+  will-change: transform;
+}
+.dragging .bulb { cursor: grabbing; }
+
+.js .cord {
+  left: 0;
+  right: auto;
+  height: 100vh;                /* scaled down to the bulb's height by JS */
+  transform-origin: top;
+  will-change: transform;
+}
+
+/* oversized square with the bands centered; JS moves its center onto the bulb */
+.js .pool {
+  inset: auto;
+  left: 0;
+  top: 0;
+  width: 180vmax;
+  height: 180vmax;
+  margin: -90vmax 0 0 -90vmax;
+  background: radial-gradient(circle at 50% 50%, var(--bands));
+  will-change: transform;
 }
 
 
