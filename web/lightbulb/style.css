@@ -1,0 +1,209 @@
+/* =========================================================================
+   LIGHTS OUT — 8-bit dark scroll page
+   No JavaScript: each line's lighting is driven by a CSS scroll-driven
+   animation (animation-timeline: view()) of a single number, --t.
+   ========================================================================= */
+
+
+/* ===== 1. Tokens: change these to restyle the whole page ===== */
+:root {
+  --bulb-x: 6vw;              /* bulb distance from the right edge   */
+  --bulb-w: 60px;             /* bulb width (12 pixel-art units × 5) */
+  --bulb-h: 85px;             /* bulb height (17 units × 5)          */
+  --glass-y: 54px;            /* glass center, measured from bulb top */
+
+  --glow-1: #ffcf6a;          /* bulb inner glow  */
+  --glow-2: #ffa83a;          /* bulb outer glow  */
+
+  /* light-pool rings, brightest → darkest */
+  --ring-1: #4a3416;
+  --ring-2: #3a2911;
+  --ring-3: #2b1e0c;
+  --ring-4: #1d1408;
+  --ring-5: #120c05;
+  --ring-6: #080502;
+
+  --px: 3px;                  /* one "pixel" of shadow/extrusion step */
+}
+
+
+/* ===== 2. Base ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { background: #000; }
+
+body {
+  background: #000;
+  color: #0a0a0a;
+  overflow-x: hidden;
+  -webkit-font-smoothing: none;     /* crisp pixel edges */
+  font-smooth: never;
+}
+
+
+/* ===== 3. Light pool: fixed, stepped rings centered on the bulb ===== */
+.pool {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(
+    circle at calc(100% - var(--bulb-x) - var(--bulb-w) / 2) 50%,
+    var(--ring-1) 0 10vmax,
+    var(--ring-2) 10vmax 22vmax,
+    var(--ring-3) 22vmax 36vmax,
+    var(--ring-4) 36vmax 52vmax,
+    var(--ring-5) 52vmax 70vmax,
+    var(--ring-6) 70vmax 90vmax,
+    #000 90vmax
+  );
+  animation: flicker 7s infinite;
+}
+
+
+/* ===== 4. Bulb + cord ===== */
+/* glass center sits exactly at 50vh so it lines up with --t = 0.5 */
+.bulb {
+  position: fixed;
+  z-index: 2;
+  right: var(--bulb-x);
+  top: calc(50vh - var(--glass-y));
+  width: var(--bulb-w);
+  height: var(--bulb-h);
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 10px var(--glow-1)) drop-shadow(0 0 40px var(--glow-2));
+  animation: flicker 7s infinite;
+}
+
+.cord {
+  position: fixed;
+  z-index: 2;
+  top: 0;
+  right: calc(var(--bulb-x) + var(--bulb-w) / 2 - 1.5px);
+  width: 3px;
+  height: calc(50vh - var(--glass-y));
+  background: #2a2a2a;
+}
+
+/* occasional hard 1-frame dips, like a cheap bulb (opacity = compositor only) */
+@keyframes flicker {
+  0%, 91%  { opacity: 1; }
+  92%      { opacity: .55; }
+  93%, 96% { opacity: 1; }
+  97%      { opacity: .75; }
+  98%      { opacity: 1; }
+}
+.pool, .bulb { animation-timing-function: steps(1, end); }
+
+
+/* ===== 5. Layout + typography ===== */
+main {
+  position: relative;
+  z-index: 1;
+  /* right-aligned column that ends just left of the bulb */
+  padding: 45vh calc(var(--bulb-x) + var(--bulb-w) + 6vw) 100vh 8vw;
+  text-align: right;
+}
+
+.line { display: block; }
+
+.hint {
+  font-family: "Silkscreen", monospace;
+  font-size: 1rem;
+  margin-bottom: 60vh;
+}
+
+h1 {
+  font-family: "Press Start 2P", monospace;
+  font-weight: 400;
+  font-size: clamp(1.6rem, 5vw, 3.6rem);
+  margin-bottom: 60vh;
+}
+
+.stanza {
+  font-family: "Silkscreen", monospace;
+  font-weight: 700;
+  font-size: clamp(1.4rem, 4.2vw, 3.2rem);
+  line-height: 1.5;
+  margin-bottom: 60vh;
+}
+
+
+/* ===== 6. Lighting per line ===== */
+/* --t: 0 = line entering at the bottom, .5 = level with bulb, 1 = leaving top.
+   Registered so it can be animated; its initial value (.5) is the "fully lit"
+   fallback for browsers without scroll-driven animations. */
+@property --t {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: .5;
+}
+
+.line {
+  /* derived values (recomputed only when --t steps) */
+  --dy: calc((.5 - var(--t)) * 2);                              /* +1 below bulb → -1 above */
+  --i:  calc(1 - 2 * max(var(--t) - .5, .5 - var(--t)));        /* 0 → 1 (at bulb) → 0     */
+
+  /* face: near-black, warms slightly when lit */
+  color: rgb(calc(10 + 38 * var(--i)) calc(8 + 28 * var(--i)) calc(6 + 14 * var(--i)));
+
+  /* hard-edged (0 blur) 8-bit stack:
+     1   warm rim on the bulb-facing edge
+     2-5 blocky black extrusion going away from the bulb
+     6-7 long cast shadow */
+  text-shadow:
+    var(--px) calc(var(--dy) * var(--px) * -1) 0 rgb(255 205 110 / calc(var(--i) * .85)),
+    calc(var(--px) * -1)  calc(var(--dy) * var(--px))      0 #050302,
+    calc(var(--px) * -2)  calc(var(--dy) * var(--px) * 2)  0 #050302,
+    calc(var(--px) * -3)  calc(var(--dy) * var(--px) * 3)  0 #050302,
+    calc(var(--px) * -4)  calc(var(--dy) * var(--px) * 4)  0 #050302,
+    calc(var(--px) * -7)  calc(var(--dy) * var(--px) * 7)  0 rgb(0 0 0 / .55),
+    calc(var(--px) * -10) calc(var(--dy) * var(--px) * 10) 0 rgb(0 0 0 / .35);
+}
+
+/* scroll-driven sweep; steps(7) snaps --t to n/6, so with --px = 3px every
+   shadow offset lands on a whole pixel (no blurry sub-pixel shadows) */
+@keyframes sweep {
+  from { --t: 0; }
+  to   { --t: 1; }
+}
+
+@supports (animation-timeline: view()) {
+  .line {
+    animation: sweep linear both;
+    animation-timing-function: steps(7, jump-none);
+    animation-timeline: view();
+    animation-range: cover 0% cover 100%;
+  }
+}
+
+
+/* ===== 7. CRT scanlines ===== */
+.scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 2px,
+    rgb(0 0 0 / .22) 2px 3px
+  );
+}
+
+
+/* ===== 8. Accessibility: no flicker for reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  .pool, .bulb { animation: none; }
+}
+
+
+/* ===== 9. Small screens: smaller bulb hugging the edge ===== */
+@media (max-width: 600px) {
+  :root {
+    --bulb-x: 16px;
+    --bulb-w: 36px;    /* 12 × 3 */
+    --bulb-h: 51px;    /* 17 × 3 */
+    --glass-y: 32px;
+  }
+  main { padding-left: 16px; padding-right: calc(var(--bulb-x) + var(--bulb-w) + 16px); }
+}

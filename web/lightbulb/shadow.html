@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lights Out</title>
+
+  <!-- ===== Fonts: pixel fonts for the 8-bit look ===== -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===== Lighting layers (fixed, never move) ===== -->
+  <div class="pool" aria-hidden="true"></div>   <!-- stepped light rings around the bulb -->
+  <div class="cord" aria-hidden="true"></div>   <!-- wire from the ceiling to the bulb -->
+
+  <!-- ===== Pixel-art bulb (12x17 grid, each unit = 1 "pixel") ===== -->
+  <svg class="bulb" viewBox="0 0 12 17" shape-rendering="crispEdges" aria-hidden="true">
+    <!-- socket -->
+    <rect x="4" y="0" width="4" height="1" fill="#4a4a4a"/>
+    <rect x="3" y="1" width="6" height="1" fill="#7a7a7a"/>
+    <rect x="3" y="2" width="6" height="1" fill="#4a4a4a"/>
+    <rect x="3" y="3" width="6" height="1" fill="#7a7a7a"/>
+    <rect x="4" y="4" width="4" height="1" fill="#4a4a4a"/>
+    <!-- glass -->
+    <g fill="#ffe27a">
+      <rect x="4" y="5"  width="4"  height="1"/>
+      <rect x="2" y="6"  width="8"  height="1"/>
+      <rect x="1" y="7"  width="10" height="1"/>
+      <rect x="0" y="8"  width="12" height="6"/>
+      <rect x="1" y="14" width="10" height="1"/>
+      <rect x="2" y="15" width="8"  height="1"/>
+      <rect x="4" y="16" width="4"  height="1"/>
+    </g>
+    <!-- glint + filament -->
+    <rect x="2" y="8"  width="2" height="3" fill="#fff8d6"/>
+    <rect x="5" y="9"  width="2" height="1" fill="#ff9a1f"/>
+    <rect x="5" y="10" width="1" height="3" fill="#ff9a1f"/>
+    <rect x="6" y="10" width="1" height="3" fill="#ffb84a"/>
+  </svg>
+
+  <!-- ===== Text: every .line gets lit as it scrolls past the bulb ===== -->
+  <main>
+    <p class="line hint">scroll &#9660;</p>
+
+    <h1 class="line">LIGHTS OUT</h1>
+
+    <p class="stanza">
+      <span class="line">the dark was here first</span>
+      <span class="line">it does not mind the wait</span>
+    </p>
+
+    <p class="stanza">
+      <span class="line">one bulb, one cord</span>
+      <span class="line">one small argument with night</span>
+    </p>
+
+    <p class="stanza">
+      <span class="line">every word you pass</span>
+      <span class="line">leans away from the glow</span>
+    </p>
+
+    <p class="stanza">
+      <span class="line">shadows are just letters</span>
+      <span class="line">learning how to stand</span>
+    </p>
+
+    <p class="stanza">
+      <span class="line">keep scrolling</span>
+      <span class="line">the dark will keep you</span>
+    </p>
+  </main>
+
+  <!-- ===== CRT scanline overlay ===== -->
+  <div class="scanlines" aria-hidden="true"></div>
+
+</body>
+</html>
