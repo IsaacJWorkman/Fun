@@ -7,23 +7,27 @@
 
 /* ===== 1. Tokens: change these to restyle the whole page ===== */
 :root {
-  --bulb-x: 6vw;              /* bulb distance from the right edge   */
-  --bulb-w: 60px;             /* bulb width (12 pixel-art units × 5) */
-  --bulb-h: 85px;             /* bulb height (17 units × 5)          */
-  --glass-y: 54px;            /* glass center, measured from bulb top */
+  --bulb-x: 6vw;              /* bulb distance from the right edge     */
+  --bulb-w: 60px;             /* bulb width (24 pixel-art units × 2.5) */
+  --bulb-h: 85px;             /* bulb height (34 units × 2.5)          */
+  --glass-y: 54px;            /* glass center, measured from bulb top  */
 
-  --glow-1: #ffcf6a;          /* bulb inner glow  */
-  --glow-2: #ffa83a;          /* bulb outer glow  */
+  --glow-1: #ffcf6a;          /* bulb inner glow */
+  --glow-2: #ffa83a;          /* bulb outer glow */
 
-  /* light-pool rings, brightest → darkest */
-  --ring-1: #4a3416;
-  --ring-2: #3a2911;
-  --ring-3: #2b1e0c;
-  --ring-4: #1d1408;
-  --ring-5: #120c05;
-  --ring-6: #080502;
+  /* light-pool bands, brightest → darkest (then pure black) */
+  --ring-1: #6e4c1f;
+  --ring-2: #5e411a;
+  --ring-3: #4f3716;
+  --ring-4: #412d12;
+  --ring-5: #34240e;
+  --ring-6: #281c0b;
+  --ring-7: #1d1408;
+  --ring-8: #140d05;
+  --ring-9: #0b0703;
 
-  --px: 3px;                  /* one "pixel" of shadow/extrusion step */
+  --px: 2px;                  /* one "pixel" of shadow/extrusion step        */
+  --steps: 13;                /* how many shadow angles a line snaps through */
 }
 
 
@@ -34,26 +38,29 @@ html { background: #000; }
 
 body {
   background: #000;
-  color: #0a0a0a;
+  color: #000;
   overflow-x: hidden;
   -webkit-font-smoothing: none;     /* crisp pixel edges */
   font-smooth: never;
 }
 
 
-/* ===== 3. Light pool: fixed, stepped rings centered on the bulb ===== */
+/* ===== 3. Light pool: fixed, stepped bands centered on the bulb ===== */
 .pool {
   position: fixed;
   inset: 0;
   z-index: 0;
   background: radial-gradient(
     circle at calc(100% - var(--bulb-x) - var(--bulb-w) / 2) 50%,
-    var(--ring-1) 0 10vmax,
-    var(--ring-2) 10vmax 22vmax,
-    var(--ring-3) 22vmax 36vmax,
-    var(--ring-4) 36vmax 52vmax,
-    var(--ring-5) 52vmax 70vmax,
-    var(--ring-6) 70vmax 90vmax,
+    var(--ring-1) 0 6vmax,
+    var(--ring-2) 6vmax 13vmax,
+    var(--ring-3) 13vmax 21vmax,
+    var(--ring-4) 21vmax 30vmax,
+    var(--ring-5) 30vmax 40vmax,
+    var(--ring-6) 40vmax 51vmax,
+    var(--ring-7) 51vmax 63vmax,
+    var(--ring-8) 63vmax 76vmax,
+    var(--ring-9) 76vmax 90vmax,
     #000 90vmax
   );
   animation: flicker 7s infinite;
@@ -69,7 +76,6 @@ body {
   top: calc(50vh - var(--glass-y));
   width: var(--bulb-w);
   height: var(--bulb-h);
-  image-rendering: pixelated;
   filter: drop-shadow(0 0 10px var(--glow-1)) drop-shadow(0 0 40px var(--glow-2));
   animation: flicker 7s infinite;
 }
@@ -102,28 +108,27 @@ main {
   /* right-aligned column that ends just left of the bulb */
   padding: 45vh calc(var(--bulb-x) + var(--bulb-w) + 6vw) 100vh 8vw;
   text-align: right;
+  font-family: "VT323", monospace;
+  letter-spacing: .08em;            /* room for each letter's shadow */
 }
 
 .line { display: block; }
 
 .hint {
-  font-family: "Silkscreen", monospace;
-  font-size: 1rem;
+  font-size: 1.6rem;
   margin-bottom: 60vh;
 }
 
 h1 {
-  font-family: "Press Start 2P", monospace;
   font-weight: 400;
-  font-size: clamp(1.6rem, 5vw, 3.6rem);
+  font-size: clamp(3rem, 10vw, 8rem);
+  line-height: 1;
   margin-bottom: 60vh;
 }
 
 .stanza {
-  font-family: "Silkscreen", monospace;
-  font-weight: 700;
-  font-size: clamp(1.4rem, 4.2vw, 3.2rem);
-  line-height: 1.5;
+  font-size: clamp(2rem, 5vw, 4.2rem);
+  line-height: 1.8;                 /* keeps shadows off the next line */
   margin-bottom: 60vh;
 }
 
@@ -140,28 +145,30 @@ h1 {
 
 .line {
   /* derived values (recomputed only when --t steps) */
-  --dy: calc((.5 - var(--t)) * 2);                              /* +1 below bulb → -1 above */
-  --i:  calc(1 - 2 * max(var(--t) - .5, .5 - var(--t)));        /* 0 → 1 (at bulb) → 0     */
+  --dy: calc((.5 - var(--t)) * 2);                         /* +1 below bulb → -1 above */
+  --i:  calc(1 - 2 * max(var(--t) - .5, .5 - var(--t)));   /* 0 → 1 (at bulb) → 0     */
 
-  /* face: near-black, warms slightly when lit */
-  color: rgb(calc(10 + 38 * var(--i)) calc(8 + 28 * var(--i)) calc(6 + 14 * var(--i)));
-
-  /* hard-edged (0 blur) 8-bit stack:
-     1   warm rim on the bulb-facing edge
-     2-5 blocky black extrusion going away from the bulb
-     6-7 long cast shadow */
+  /* 3 tones: black face, bronze 3D edge, lit background.
+     Every vertical offset is rounded to a whole pixel so edges stay crisp.
+     1   1px warm rim on the bulb-facing edge (outlines the letter)
+     2-4 graded bronze extrusion going away from the bulb (fades with --i)
+     5-6 short hard cast shadow */
   text-shadow:
-    var(--px) calc(var(--dy) * var(--px) * -1) 0 rgb(255 205 110 / calc(var(--i) * .85)),
-    calc(var(--px) * -1)  calc(var(--dy) * var(--px))      0 #050302,
-    calc(var(--px) * -2)  calc(var(--dy) * var(--px) * 2)  0 #050302,
-    calc(var(--px) * -3)  calc(var(--dy) * var(--px) * 3)  0 #050302,
-    calc(var(--px) * -4)  calc(var(--dy) * var(--px) * 4)  0 #050302,
-    calc(var(--px) * -7)  calc(var(--dy) * var(--px) * 7)  0 rgb(0 0 0 / .55),
-    calc(var(--px) * -10) calc(var(--dy) * var(--px) * 10) 0 rgb(0 0 0 / .35);
+    1px round(nearest, calc(var(--dy) * -1px), 1px) 0
+      rgb(255 214 130 / calc(var(--i) * .95)),
+    calc(var(--px) * -1) round(nearest, calc(var(--dy) * var(--px)), 1px) 0
+      rgb(calc(70 * var(--i)) calc(48 * var(--i)) calc(22 * var(--i))),
+    calc(var(--px) * -2) round(nearest, calc(var(--dy) * var(--px) * 2), 1px) 0
+      rgb(calc(52 * var(--i)) calc(36 * var(--i)) calc(16 * var(--i))),
+    calc(var(--px) * -3) round(nearest, calc(var(--dy) * var(--px) * 3), 1px) 0
+      rgb(calc(38 * var(--i)) calc(26 * var(--i)) calc(12 * var(--i))),
+    calc(var(--px) * -5) round(nearest, calc(var(--dy) * var(--px) * 5), 1px) 0
+      rgb(0 0 0 / .45),
+    calc(var(--px) * -7) round(nearest, calc(var(--dy) * var(--px) * 7), 1px) 0
+      rgb(0 0 0 / .3);
 }
 
-/* scroll-driven sweep; steps(7) snaps --t to n/6, so with --px = 3px every
-   shadow offset lands on a whole pixel (no blurry sub-pixel shadows) */
+/* scroll-driven sweep, snapped to --steps angles */
 @keyframes sweep {
   from { --t: 0; }
   to   { --t: 1; }
@@ -170,14 +177,14 @@ h1 {
 @supports (animation-timeline: view()) {
   .line {
     animation: sweep linear both;
-    animation-timing-function: steps(7, jump-none);
+    animation-timing-function: steps(var(--steps), jump-none);
     animation-timeline: view();
     animation-range: cover 0% cover 100%;
   }
 }
 
 
-/* ===== 7. CRT scanlines ===== */
+/* ===== 7. CRT scanlines (light, so they don't dim the text) ===== */
 .scanlines {
   position: fixed;
   inset: 0;
@@ -186,7 +193,7 @@ h1 {
   background: repeating-linear-gradient(
     to bottom,
     transparent 0 2px,
-    rgb(0 0 0 / .22) 2px 3px
+    rgb(0 0 0 / .1) 2px 3px
   );
 }
 
@@ -201,8 +208,8 @@ h1 {
 @media (max-width: 600px) {
   :root {
     --bulb-x: 16px;
-    --bulb-w: 36px;    /* 12 × 3 */
-    --bulb-h: 51px;    /* 17 × 3 */
+    --bulb-w: 36px;    /* 24 × 1.5 */
+    --bulb-h: 51px;    /* 34 × 1.5 */
     --glass-y: 32px;
   }
   main { padding-left: 16px; padding-right: calc(var(--bulb-x) + var(--bulb-w) + 16px); }
