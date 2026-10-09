@@ -1,6 +1,6 @@
 /* =========================================================================
    LIGHTS OUT — lamp.js
-   Makes the bulb follow the mouse (or a finger dragging it) and points every
+   Lets the bulb be clicked and dragged (mouse, touch or pen) and points every
    line's shadow away from it. JS only feeds three numbers per line
    (--dx, --dy, --i); style.css turns them into the shadow stack.
    Without this file the page falls back to the CSS scroll-driven version.
@@ -72,23 +72,24 @@
     kick();
   }
 
-  // mouse: bulb follows the cursor, goes home when the cursor leaves the window
-  addEventListener("pointermove", e => {
-    if (e.pointerType === "mouse") aim(e.clientX, e.clientY);
-  }, { passive: true });
-  document.addEventListener("mouseout", e => {
-    if (!e.relatedTarget) aim(homeX, homeY, true);
-  });
-
-  // touch / pen: drag the bulb itself (touch-action: none on .bulb in CSS)
+  // mouse, touch or pen: the bulb only moves while it's being dragged
+  // (touch-action: none on .bulb in CSS). It stays wherever it's dropped.
+  let grabX = 0, grabY = 0;                     // pointer offset from glass center
   bulb.addEventListener("pointerdown", e => {
-    if (e.pointerType === "mouse") return;
+    if (e.button !== 0) return;                 // primary button / finger only
+    e.preventDefault();                         // no text selection while dragging
     dragging = true;
+    grabX = e.clientX - tx;
+    grabY = e.clientY - ty;
     bulb.setPointerCapture(e.pointerId);
     root.classList.add("dragging");
   });
   bulb.addEventListener("pointermove", e => {
-    if (dragging) aim(e.clientX, e.clientY);
+    if (!dragging) return;
+    // keep the glass center inside the window so the bulb can't be lost
+    const px = Math.min(Math.max(e.clientX - grabX, 0), innerWidth);
+    const py = Math.min(Math.max(e.clientY - grabY, 0), innerHeight);
+    aim(px, py);
   });
   const drop = () => { dragging = false; root.classList.remove("dragging"); };
   bulb.addEventListener("pointerup", drop);
